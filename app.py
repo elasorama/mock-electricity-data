@@ -46,7 +46,7 @@ def generate_mock_energy_data():
         "current": current
     }
 
-def stream_energy_data(producer, continues: bool = False, time_interval: int = 1):
+def stream_energy_data(producer, continues: bool = False, time_interval: int = 1, time_generation: int = 60):
     if continues:
         while True:
             data_point = generate_mock_energy_data()
@@ -58,12 +58,16 @@ def stream_energy_data(producer, continues: bool = False, time_interval: int = 1
             # Sleep for 1 second
             time.sleep(time_interval)
     else:
-        # Sending just one point of data
-        data_point = generate_mock_energy_data()
-        print(data_point)
-        event_data_batch = producer.create_batch()
-        event_data_batch.add(EventData(json.dumps(data_point, default=str)))
-        producer.send_batch(event_data_batch)
+        start = time.time()
+        while time.time() - start < time_generation:
+            data_point = generate_mock_energy_data()
+            print(data_point)
+            event_data_batch = producer.create_batch()
+            event_data_batch.add(EventData(json.dumps(data_point, default=str)))
+            producer.send_batch(event_data_batch)
+            
+            # Sleep for 1 second
+            time.sleep(time_interval)
 
 if __name__ == "__main__":
     # Loading the .env file
